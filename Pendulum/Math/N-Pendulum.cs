@@ -1,4 +1,13 @@
-﻿namespace Pendulum.Math;
+﻿#define LEAPFROG
+
+namespace Pendulum.Math;
+
+#if RUNGEKUTTA
+#elif LEAPFROG
+#elif SYMEULER
+#else
+	#error No Solver method defined
+#endif
 
 public class NPendulum : IDisposable
 {
@@ -14,9 +23,12 @@ public class NPendulum : IDisposable
 	private readonly double[,] _matrix;
 	private readonly double[] _vector;
 	private readonly PointF[] _positions;
+#if RUNGEKUTTA
 	private readonly double[] _rk1Buffer;
 	private readonly double[] _rk2Buffer;
-	
+#elif LEAPFROG	
+	private readonly double[] _accelBuffer;
+#endif
 	private readonly int _n;
 	private readonly double _armlength;
 	
@@ -36,8 +48,12 @@ public class NPendulum : IDisposable
 		_matrix = new double[_n, _n];
 		_vector = new double[_n];
 		_positions = new PointF[_n + 1];
+#if RUNGEKUTTA
 		_rk1Buffer = new double[_n];
 		_rk2Buffer = new double[_n];
+#elif LEAPFROG
+		_accelBuffer = new double[_n];
+#endif
 		
 		initialTheta.CopyTo(_thetas);
 		initialThetaDot.CopyTo(_thetaDots);
@@ -47,19 +63,19 @@ public class NPendulum : IDisposable
 	
 	private void PopulateMatrix(double[] thetas)
 	{
-		for (int i = 0; i < _n; i++)
+		Parallel.For(0, _n, i =>
 		{
 			var theta1 = thetas[i];
 			for (int j = 0; j < _n; j++)
 			{
 				_matrix[i, j] = (_n - int.Max(i, j)) * double.Cos(theta1 - thetas[j]);
 			}
-		}
+		});
 	}
 	
 	private void PopulateVector(double[] thetas, double[] thetaDots)
 	{
-		for (int i = 0; i < _n; i++)
+		Parallel.For(0, _n, (i) =>
 		{
 			var sum = 0.0;
 			var theta = thetas[i];
@@ -69,12 +85,12 @@ public class NPendulum : IDisposable
 				var theta2dot = thetaDots[j];
 				sum -= (_n - int.Max(i, j)) * double.Sin(theta - theta2) * theta2dot * theta2dot;
 			}
-
+			
 			sum -= Gravity * (_n - i) * double.Sin(theta);
 			_vector[i] = sum;
-		}
+		});
 	}
-
+#if RUNGEKUTTA
 	private (double[], double[]) F(double[] thetas, double[] thetaDots)
 	{
 		PopulateMatrix(thetas);
@@ -83,10 +99,12 @@ public class NPendulum : IDisposable
 		return (thetaDots, solved);
 	}
 	
-	private double[] RkShorthand(in double[] current, in double[] baseValues, double mult, double[] output)
+	private double[] RkShorthand(double[] current, double[] baseValues, double mult, double[] output)
 	{
-		for (int i = 0; i < _n; i++)
+		Parallel.For(0, _n, i =>
+		{
 			output[i] = baseValues[i] + mult * current[i];
+		});
 		return output;
 	}
 	
@@ -99,16 +117,62 @@ public class NPendulum : IDisposable
 		var k2 = ApplyRk(k1, thetas, thetadots, 0.5 * dt);
 		var k3 = ApplyRk(k2, thetas, thetadots, 0.5 * dt);
 		var k4 = ApplyRk(k3, thetas, thetadots, 1 * dt);
-		for (int i = 0; i < _n; i++)
+		Parallel.For(0, _n, i =>
 		{
 			thetas[i] += dt / 6 * (k1.Item1[i] + (k2.Item1[i] + k3.Item1[i]) * 2 + k4.Item1[i]);
 			thetadots[i] += dt / 6 * (k1.Item2[i] + (k2.Item2[i] + k3.Item2[i]) * 2 + k4.Item2[i]);
-		}
+		});
 	}
+#elif SYMEULER
+	private void SymplecticEuler(double dt, double[] thetas, double[] thetaDots)
+	{
+		PopulateMatrix(thetas);
+		PopulateVector(thetas, thetaDots);
 
+		var accelerations = LUSolve.Eliminate(_matrix, _vector);
+
+		Parallel.For(0, _n, i =>
+		{
+			thetaDots[i] += dt * accelerations[i];
+			thetas[i] += dt * thetaDots[i];
+		});
+	}
+#elif LEAPFROG
+	private void Leapfrog(double dt, double[] thetas, double[] thetaDots, double[] accels)
+	{
+		PopulateMatrix(thetas);
+		PopulateVector(thetas, thetaDots);
+		var initialAccel = LUSolve.Eliminate(_matrix, _vector);
+		Parallel.For(0, _n, i =>
+		{
+			accels[i] = initialAccel[i];
+			thetaDots[i] += 0.5 * dt * accels[i];
+		});
+		
+		Parallel.For(0, _n, i =>
+		{
+			thetas[i] += dt * thetaDots[i];
+		});
+
+		PopulateMatrix(thetas);
+		PopulateVector(thetas, thetaDots);
+		var newAccel = LUSolve.Eliminate(_matrix, _vector);
+
+		Parallel.For(0, _n, i =>
+		{
+			thetaDots[i] += 0.5 * dt * newAccel[i];
+		});
+	}
+#endif
 	public void Update(double dt)
 	{
+#if RUNGEKUTTA
 		RungeKutta4(dt, _thetas, _thetaDots);
+#elif SYMEULER
+		SymplecticEuler(dt, _thetas, _thetaDots);
+#elif LEAPFROG
+		Leapfrog(dt, _thetas, _thetaDots, _accelBuffer);
+#endif	
 		_canAddPoint = true;
 	}
 
