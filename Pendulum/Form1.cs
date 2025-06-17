@@ -16,7 +16,7 @@ public partial class Form1 : Form
 		timer.Tick += (sender, args) =>
 		{
 			var dt = DateTime.Now - lastUpdate;
-			pendulum.Update(dt.TotalMilliseconds / 2000.0 ); // this immediately explodes everything no matter what numbers i try 
+			pendulum.Update(dt.TotalMilliseconds / 2000.0 );
 			lastUpdate = DateTime.Now;
 			MainArea.Invalidate();
 		};
