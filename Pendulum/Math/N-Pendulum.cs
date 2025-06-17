@@ -14,6 +14,8 @@ public class NPendulum : IDisposable
 	private readonly double[,] _matrix;
 	private readonly double[] _vector;
 	private readonly PointF[] _positions;
+	private readonly double[] _rk1Buffer;
+	private readonly double[] _rk2Buffer;
 	
 	private readonly int _n;
 	private readonly double _armlength;
@@ -34,6 +36,8 @@ public class NPendulum : IDisposable
 		_matrix = new double[_n, _n];
 		_vector = new double[_n];
 		_positions = new PointF[_n + 1];
+		_rk1Buffer = new double[_n];
+		_rk2Buffer = new double[_n];
 		
 		initialTheta.CopyTo(_thetas);
 		initialThetaDot.CopyTo(_thetaDots);
@@ -79,16 +83,15 @@ public class NPendulum : IDisposable
 		return (thetaDots, solved);
 	}
 	
-	private double[] RkShorthand(double[] current, double[] baseValues, double mult)
+	private double[] RkShorthand(in double[] current, in double[] baseValues, double mult, double[] output)
 	{
-		var res = new double[_n];
 		for (int i = 0; i < _n; i++)
-			res[i] = baseValues[i] + mult * current[i];
-		return res;
+			output[i] = baseValues[i] + mult * current[i];
+		return output;
 	}
 	
-	private (double[], double[]) ApplyRk((double[], double[]) current, double[] firstBase, double[] secondBase, double mult)
-		=> F(RkShorthand(current.Item1, firstBase, mult), RkShorthand(current.Item2, secondBase, mult));
+	private (double[], double[]) ApplyRk((double[], double[]) current, in double[] firstBase, in double[] secondBase, double mult)
+		=> F(RkShorthand(current.Item1, firstBase, mult, _rk1Buffer), RkShorthand(current.Item2, secondBase, mult, _rk2Buffer));
 
 	private void RungeKutta4(double dt, double[] thetas, double[] thetadots)
 	{
