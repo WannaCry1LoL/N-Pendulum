@@ -1,4 +1,4 @@
-﻿#define LEAPFROG
+﻿#define RUNGEKUTTA
 
 namespace Pendulum.Math;
 
@@ -104,7 +104,8 @@ public class NPendulum : IDisposable
 	{
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
-		var solved = LUSolve.Eliminate(_matrix, _vector);
+		var solved = new double[_n];
+		_luSolver.Eliminate(_matrix, _vector, solved);
 		return (thetaDots, solved);
 	}
 	

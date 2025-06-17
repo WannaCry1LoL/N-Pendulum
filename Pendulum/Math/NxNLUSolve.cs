@@ -16,6 +16,9 @@ public class NxNLUSolver
 	}
 	public void Decompose(double[,] source)
 	{
+		Array.Clear(_uBuffer);
+		Array.Clear(_lBuffer);
+		Array.Clear(_uTransformBuffer);
 		for (var i = 0; i < _n; i++)
 		{
 			for (var k = i; k < _n; k++)
@@ -51,7 +54,7 @@ public class NxNLUSolver
 		}
 	}
 	
-	public void Eliminate(double[,] matrix, ReadOnlySpan<double> coefficients, double[] solution)
+	public void Eliminate(double[,] matrix, ReadOnlySpan<double> coefficients, Span<double> solution)
 	{
 		if (matrix.GetLength(0) != matrix.GetLength(1))
 		{
@@ -70,7 +73,7 @@ public class NxNLUSolver
 				pivotPointSum += _uTransformBuffer[j] * _lBuffer[i, j];
 			}
 
-			_uTransformBuffer[i] = (coefficients[i] - pivotPointSum) / _lBuffer[i, i];
+			_uTransformBuffer[i] = coefficients[i] - pivotPointSum;
 		}
 
 		for (var i = pivot - 1; i >= 0; i--)
