@@ -192,7 +192,6 @@ public class NPendulum : IDisposable
 	public void Draw(Graphics g, PointF start)
 	{
 		Positions(start);
-		g.DrawLines(_linePen, _positions);
 		var last = _positions[^1];
 		if (_canAddPoint)
 		{
@@ -201,6 +200,7 @@ public class NPendulum : IDisposable
 		}
 		if (_points.Count > 1)
 			g.DrawLines(_pointPen, _points.ToArray());
+		g.DrawLines(_linePen, _positions);
 		g.FillEllipse(_circleBrush, last.X - CircleOffset, last.Y - CircleOffset, CircleSize, CircleSize);
 	}
 	public void Dispose()
