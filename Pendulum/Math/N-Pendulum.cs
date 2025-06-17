@@ -28,6 +28,9 @@ public class NPendulum : IDisposable
 	private readonly double[] _rk2Buffer;
 #elif LEAPFROG	
 	private readonly double[] _accelBuffer;
+	private readonly double[] _newAccelBuffer;
+#elif SYMEULER
+	private readonly double[] _solutionBuffer;
 #endif
 	private readonly int _n;
 	private readonly double _armlength;
@@ -36,6 +39,8 @@ public class NPendulum : IDisposable
 	private readonly Pen _linePen = new(Color.Black, 3);
 	private readonly SolidBrush _circleBrush = new(Color.Red);
 
+	private readonly NxNLUSolver _luSolver;
+	
 	private bool _canAddPoint = true;
 
 	public NPendulum(double[] initialTheta, double[] initialThetaDot)
@@ -48,11 +53,15 @@ public class NPendulum : IDisposable
 		_matrix = new double[_n, _n];
 		_vector = new double[_n];
 		_positions = new PointF[_n + 1];
+		_luSolver = new NxNLUSolver(_n);
 #if RUNGEKUTTA
 		_rk1Buffer = new double[_n];
 		_rk2Buffer = new double[_n];
 #elif LEAPFROG
 		_accelBuffer = new double[_n];
+		_newAccelBuffer = new double[_n];
+#elif SYMEULER
+		_solutionBuffer = new double[_n];
 #endif
 		
 		initialTheta.CopyTo(_thetas);
@@ -129,11 +138,11 @@ public class NPendulum : IDisposable
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
 
-		var accelerations = LUSolve.Eliminate(_matrix, _vector);
+		_luSolver.Eliminate(_matrix, _vector, _solutionBuffer);
 
 		Parallel.For(0, _n, i =>
 		{
-			thetaDots[i] += dt * accelerations[i];
+			thetaDots[i] += dt * _solutionBuffer[i];
 			thetas[i] += dt * thetaDots[i];
 		});
 	}
@@ -142,10 +151,9 @@ public class NPendulum : IDisposable
 	{
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
-		var initialAccel = LUSolve.Eliminate(_matrix, _vector);
+		_luSolver.Eliminate(_matrix, _vector, accels);
 		Parallel.For(0, _n, i =>
 		{
-			accels[i] = initialAccel[i];
 			thetaDots[i] += 0.5 * dt * accels[i];
 		});
 		
@@ -156,11 +164,12 @@ public class NPendulum : IDisposable
 
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
-		var newAccel = LUSolve.Eliminate(_matrix, _vector);
+		
+		_luSolver.Eliminate(_matrix, _vector, _newAccelBuffer);
 
 		Parallel.For(0, _n, i =>
 		{
-			thetaDots[i] += 0.5 * dt * newAccel[i];
+			thetaDots[i] += 0.5 * dt * _newAccelBuffer[i];
 		});
 	}
 #endif
