@@ -31,6 +31,17 @@ public class NPendulum : IDisposable
 		return this;
 	}
 
+	public NPendulum AddNRand(int n)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			var theta = Random.Shared.NextDouble() * double.Tau;
+			Add(theta, 0.0);
+		}
+		return this;
+	}
+	
+
 	public NPendulum Pop(out Pendulum popped)
 	{
 		if (_pendulums.Count == 0) throw new InvalidOperationException("Cannot pop from empty list");
