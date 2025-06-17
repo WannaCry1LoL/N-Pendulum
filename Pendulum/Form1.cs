@@ -6,7 +6,7 @@ public partial class Form1 : Form
 {
 	private Panel MainArea = new DoubleBufferedPanel();
 	private DateTime lastUpdate;
-	public Form1()
+	public Form1(int amount)
 	{
 		var pendulum = new NPendulum();
 		var timer = new System.Windows.Forms.Timer()
@@ -21,7 +21,7 @@ public partial class Form1 : Form
 			MainArea.Invalidate();
 		};
 		pendulum
-			.AddN(2, 0.45 * double.Pi, 0.0);
+			.AddN(amount, 0.45 * double.Pi, 0.0);
 		InitializeComponent();
 		ResizeRedraw = true;
 		Resize += (sender, args) =>
