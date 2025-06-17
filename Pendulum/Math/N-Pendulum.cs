@@ -2,11 +2,8 @@
 
 namespace Pendulum.Math;
 
-#if RUNGEKUTTA
-#elif LEAPFROG
-#elif SYMEULER
-#else
-	#error No Solver method defined
+#if !(RUNGEKUTTA || LEAPFROG || SYMEULER)
+#error Define a solver method
 #endif
 
 public class NPendulum : IDisposable
