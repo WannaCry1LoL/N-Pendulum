@@ -5,10 +5,10 @@ using Pendulum.Math;
 public partial class Form1 : Form
 {
 	private Panel MainArea = new DoubleBufferedPanel();
-	private NPendulum pendulum = new NPendulum();
 	private DateTime lastUpdate;
 	public Form1()
 	{
+		var pendulum = new NPendulum();
 		var timer = new System.Windows.Forms.Timer()
 		{
 			Interval = 1
@@ -35,5 +35,11 @@ public partial class Form1 : Form
 		Controls.Add(MainArea);
 		lastUpdate = DateTime.Now;
 		timer.Start();
+		
+		FormClosing += (sender, args) =>
+		{
+			timer.Stop();
+			pendulum.Dispose();
+		};
 	}
 }

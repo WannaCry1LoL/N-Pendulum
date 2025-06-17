@@ -1,6 +1,6 @@
 ﻿namespace Pendulum.Math;
 
-public class NPendulum
+public class NPendulum : IDisposable
 {
 	private const double g = -9.81; 
 	private List<Pendulum> _pendulums = [];
@@ -150,5 +150,10 @@ public class NPendulum
 			g.DrawLines(PointPen, _points.ToArray());
 		g.FillEllipse(b, last.X - (int)(CircleSize / 2), last.Y - (int)(CircleSize / 2), (int)CircleSize, (int)CircleSize);
 	}
-	
+	public void Dispose()
+	{
+		PointPen.Dispose();
+		p.Dispose();
+		b.Dispose();
+	}
 }
