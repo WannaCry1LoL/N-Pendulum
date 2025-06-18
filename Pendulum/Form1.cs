@@ -1,7 +1,8 @@
 namespace Pendulum;
+using Timer = System.Windows.Forms.Timer;
+using System.Drawing.Drawing2D;
 using System.Diagnostics;
 using Math;
-using Timer = System.Windows.Forms.Timer;
 public partial class Form1 : Form
 {
 	private readonly Panel _mainArea = new DoubleBufferedPanel();
@@ -42,7 +43,9 @@ public partial class Form1 : Form
 		_mainArea.Paint += (sender, args) =>
 		{
 			using var bitGraphics = Graphics.FromImage(_bitmap);
-			pendulum.Draw(args.Graphics, bitGraphics,
+			var g = args.Graphics;
+			g.SmoothingMode = SmoothingMode.AntiAlias;
+			pendulum.Draw(g, bitGraphics,
 				new PointF(_mainArea.ClientSize.Width / 2.0f, _mainArea.ClientSize.Height / 2.0f));
 		};
 		
