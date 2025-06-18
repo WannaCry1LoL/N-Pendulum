@@ -118,16 +118,16 @@ public class NPendulum : IDisposable
 	private (double[], double[]) ApplyRk((double[], double[]) current, in double[] firstBase, in double[] secondBase, double mult)
 		=> F(RkShorthand(current.Item1, firstBase, mult, _rk1Buffer), RkShorthand(current.Item2, secondBase, mult, _rk2Buffer));
 
-	private void RungeKutta4(double dt, double[] thetas, double[] thetadots)
+	private void RungeKutta4(double dt, double[] thetas, double[] thetaDots)
 	{
-		var k1 = F(thetas, thetadots);
-		var k2 = ApplyRk(k1, thetas, thetadots, 0.5 * dt);
-		var k3 = ApplyRk(k2, thetas, thetadots, 0.5 * dt);
-		var k4 = ApplyRk(k3, thetas, thetadots, 1 * dt);
+		var k1 = F(thetas, thetaDots);
+		var k2 = ApplyRk(k1, thetas, thetaDots, 0.5 * dt);
+		var k3 = ApplyRk(k2, thetas, thetaDots, 0.5 * dt);
+		var k4 = ApplyRk(k3, thetas, thetaDots, 1 * dt);
 		Parallel.For(0, _n, i =>
 		{
 			thetas[i] += dt / 6 * (k1.Item1[i] + (k2.Item1[i] + k3.Item1[i]) * 2 + k4.Item1[i]);
-			thetadots[i] += dt / 6 * (k1.Item2[i] + (k2.Item2[i] + k3.Item2[i]) * 2 + k4.Item2[i]);
+			thetaDots[i] += dt / 6 * (k1.Item2[i] + (k2.Item2[i] + k3.Item2[i]) * 2 + k4.Item2[i]);
 		});
 	}
 #elif SYMEULER
@@ -145,21 +145,17 @@ public class NPendulum : IDisposable
 		});
 	}
 #elif LEAPFROG
-	private void Leapfrog(double dt, double[] thetas, double[] thetaDots, double[] accels)
+	private void Leapfrog(double dt, double[] thetas, double[] thetaDots)
 	{
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
-		_luSolver.Eliminate(_matrix, _vector, accels);
+		_luSolver.Eliminate(_matrix, _vector, _accelBuffer);
 		Parallel.For(0, _n, i =>
 		{
-			thetaDots[i] += 0.5 * dt * accels[i];
-		});
-		
-		Parallel.For(0, _n, i =>
-		{
+			thetaDots[i] += 0.5 * dt * _accelBuffer[i];
 			thetas[i] += dt * thetaDots[i];
 		});
-
+		
 		PopulateMatrix(thetas);
 		PopulateVector(thetas, thetaDots);
 		
@@ -178,8 +174,8 @@ public class NPendulum : IDisposable
 #elif SYMEULER
 		SymplecticEuler(dt, _thetas, _thetaDots);
 #elif LEAPFROG
-		Leapfrog(dt, _thetas, _thetaDots, _accelBuffer);
-#endif	
+		Leapfrog(dt, _thetas, _thetaDots);
+#endif 
 		_canAddPoint = true;
 	}
 
