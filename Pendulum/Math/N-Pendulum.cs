@@ -23,6 +23,8 @@ public class NPendulum : IDisposable
 #if RUNGEKUTTA
 	private readonly double[] _rk1Buffer;
 	private readonly double[] _rk2Buffer;
+	private readonly double[] _rk3Buffer;
+	private readonly double[] _rk4Buffer;
 #elif LEAPFROG	
 	private readonly double[] _accelBuffer;
 	private readonly double[] _newAccelBuffer;
@@ -52,6 +54,8 @@ public class NPendulum : IDisposable
 #if RUNGEKUTTA
 		_rk1Buffer = new double[_n];
 		_rk2Buffer = new double[_n];
+		_rk3Buffer = new double[_n];
+		_rk4Buffer = new double[_n];
 #elif LEAPFROG
 		_accelBuffer = new double[_n];
 		_newAccelBuffer = new double[_n];
@@ -113,15 +117,15 @@ public class NPendulum : IDisposable
 		return output;
 	}
 	
-	private (double[], double[]) ApplyRk((double[], double[]) current, in double[] firstBase, in double[] secondBase, double mult)
-		=> F(RkShorthand(current.Item1, firstBase, mult, _rk1Buffer), RkShorthand(current.Item2, secondBase, mult, _rk2Buffer));
+	private (double[], double[]) ApplyRk((double[], double[]) current, in double[] firstBase, in double[] secondBase, double mult, double[] secondBuffer)
+		=> F(RkShorthand(current.Item1, firstBase, mult, _rk1Buffer), RkShorthand(current.Item2, secondBase, mult, secondBuffer));
 
 	private void RungeKutta4(double dt, double[] thetas, double[] thetaDots)
 	{
 		var k1 = F(thetas, thetaDots);
-		var k2 = ApplyRk(k1, thetas, thetaDots, 0.5 * dt);
-		var k3 = ApplyRk(k2, thetas, thetaDots, 0.5 * dt);
-		var k4 = ApplyRk(k3, thetas, thetaDots, 1 * dt);
+		var k2 = ApplyRk(k1, thetas, thetaDots, 0.5 * dt, _rk2Buffer);
+		var k3 = ApplyRk(k2, thetas, thetaDots, 0.5 * dt, _rk3Buffer);
+		var k4 = ApplyRk(k3, thetas, thetaDots, 1 * dt, _rk4Buffer);
 		Parallel.For(0, _n, i =>
 		{
 			thetas[i] += dt / 6 * (k1.Item1[i] + (k2.Item1[i] + k3.Item1[i]) * 2 + k4.Item1[i]);
