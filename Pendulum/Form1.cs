@@ -52,7 +52,7 @@ public partial class Form1 : Form
 		_timer.Tick += (sender, args) =>
 		{
 			var dt = _stopwatch.ElapsedMilliseconds - _lastUpdate;
-			pendulum.Update(dt / 2000.0);
+			pendulum.Update(dt / 2500.0);
 			_lastUpdate = _stopwatch.ElapsedMilliseconds;
 			_mainArea.Invalidate();
 		};
