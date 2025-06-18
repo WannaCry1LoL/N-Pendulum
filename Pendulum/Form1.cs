@@ -5,6 +5,7 @@ using Timer = System.Windows.Forms.Timer;
 public partial class Form1 : Form
 {
 	private readonly Panel _mainArea = new DoubleBufferedPanel();
+	private Bitmap _bitmap;
 	private long _lastUpdate;
 	private readonly Timer _timer = new()
 	{
@@ -25,7 +26,10 @@ public partial class Form1 : Form
 		
 		Resize += (sender, args) =>
 		{
+			_bitmap?.Dispose();
 			_mainArea.Size = ClientSize;
+			_bitmap = new Bitmap(_mainArea.ClientSize.Width, _mainArea.ClientSize.Height);
+			_mainArea.BackgroundImage = _bitmap;
 			pendulum.ClearPoints();
 		};
 		
@@ -34,9 +38,13 @@ public partial class Form1 : Form
 			_timer.Stop();
 			pendulum.Dispose();
 		};
-		
+
 		_mainArea.Paint += (sender, args) =>
-			pendulum.Draw(args.Graphics, new PointF(_mainArea.ClientSize.Width / 2.0f, _mainArea.ClientSize.Height / 2.0f));
+		{
+			using var bitGraphics = Graphics.FromImage(_bitmap);
+			pendulum.Draw(args.Graphics, bitGraphics,
+				new PointF(_mainArea.ClientSize.Width / 2.0f, _mainArea.ClientSize.Height / 2.0f));
+		};
 		
 		_timer.Tick += (sender, args) =>
 		{
@@ -46,11 +54,13 @@ public partial class Form1 : Form
 			_mainArea.Invalidate();
 		};
 		
+		_mainArea.Size = ClientSize;
+		_bitmap = new Bitmap(_mainArea.ClientSize.Width, _mainArea.ClientSize.Height);
+		_mainArea.BackgroundImage = _bitmap;
 		_lastUpdate = 0;
 		_timer.Start();
 		_stopwatch.Start();
 		Controls.Add(_mainArea);
 		
-		_mainArea.Size = ClientSize;
 	}
 }

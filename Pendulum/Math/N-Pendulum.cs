@@ -13,7 +13,7 @@ public class NPendulum : IDisposable
 	private const float CircleSize = 20;
 	private const float CircleOffset = (CircleSize / 2);
 	
-	private readonly List<PointF> _points = [];
+	private PointF? _previous;
 	
 	private readonly double[] _thetas;
 	private readonly double[] _thetaDots;
@@ -32,13 +32,11 @@ public class NPendulum : IDisposable
 	private readonly int _n;
 	private readonly double _armlength;
 	
-	private readonly Pen _pointPen = new(Color.Red, 1);
+	private readonly Pen _pointPen = Pens.Red;
 	private readonly Pen _linePen = new(Color.Black, 3);
 	private readonly SolidBrush _circleBrush = new(Color.Red);
 
 	private readonly NxNLUSolver _luSolver;
-	
-	private bool _canAddPoint = true;
 
 	public NPendulum(double[] initialTheta, double[] initialThetaDot)
 	{
@@ -65,8 +63,8 @@ public class NPendulum : IDisposable
 		initialThetaDot.CopyTo(_thetaDots);
 	}
 	
-	public void ClearPoints() => _points.Clear();
-	
+	public void ClearPoints() => _previous = null;
+
 	private void PopulateMatrix(double[] thetas)
 	{
 		Parallel.For(0, _n, i =>
@@ -175,8 +173,7 @@ public class NPendulum : IDisposable
 		SymplecticEuler(dt, _thetas, _thetaDots);
 #elif LEAPFROG
 		Leapfrog(dt, _thetas, _thetaDots);
-#endif 
-		_canAddPoint = true;
+#endif
 	}
 
 	private void Positions(PointF initial)
@@ -192,23 +189,25 @@ public class NPendulum : IDisposable
 		}
 	}
 	
-	public void Draw(Graphics g, PointF start)
+	public void Draw(Graphics g, Graphics bitmapG, PointF start)
 	{
 		Positions(start);
 		var last = _positions[^1];
-		if (_canAddPoint)
+		
+		if (_previous is not null)
 		{
-			_points.Add(last);
-			_canAddPoint = false;
+			bitmapG.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+			bitmapG.DrawLine(_pointPen, _previous.Value, last);
 		}
-		if (_points.Count > 1)
-			g.DrawLines(_pointPen, _points.ToArray());
+		
 		g.DrawLines(_linePen, _positions);
 		g.FillEllipse(_circleBrush, last.X - CircleOffset, last.Y - CircleOffset, CircleSize, CircleSize);
+		
+		_previous = last;
 	}
+	
 	public void Dispose()
 	{
-		_pointPen.Dispose();
 		_linePen.Dispose();
 		_circleBrush.Dispose();
 	}
