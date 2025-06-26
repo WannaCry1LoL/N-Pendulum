@@ -1,5 +1,7 @@
 ﻿#define RUNGEKUTTA
 
+using System.Runtime.CompilerServices;
+
 namespace Pendulum.Math;
 
 #if !(RUNGEKUTTA || LEAPFROG || SYMEULER)
@@ -133,6 +135,7 @@ public class NPendulum : IDisposable
 		return output;
 	}
 	
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private (double[], double[]) ApplyRk((double[], double[]) current, double[] firstBase, double[] secondBase, double mult, double[] secondBuffer, double[] solutionBuffer)
 		=> F(RkShorthand(current.Item1, firstBase, mult, _rkBuffers[0]), RkShorthand(current.Item2, secondBase, mult, secondBuffer), solutionBuffer);
 
