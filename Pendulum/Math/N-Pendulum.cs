@@ -21,10 +21,8 @@ public class NPendulum : IDisposable
 	private readonly double[] _vector;
 	private readonly PointF[] _positions;
 #if RUNGEKUTTA
-	private readonly double[] _rk1Buffer;
-	private readonly double[] _rk2Buffer;
-	private readonly double[] _rk3Buffer;
-	private readonly double[] _rk4Buffer;
+	private readonly double[][] _rkBuffers;
+	private readonly double[][] _rkSolutionBuffers;
 #elif LEAPFROG	
 	private readonly double[] _accelBuffer;
 	private readonly double[] _newAccelBuffer;
@@ -52,10 +50,8 @@ public class NPendulum : IDisposable
 		_positions = new PointF[_n + 1];
 		_luSolver = new NxNLUSolver(_n);
 #if RUNGEKUTTA
-		_rk1Buffer = new double[_n];
-		_rk2Buffer = new double[_n];
-		_rk3Buffer = new double[_n];
-		_rk4Buffer = new double[_n];
+		_rkBuffers = Utils.CreateFixedSizeBuffers<double>(4, _n);
+		_rkSolutionBuffers = Utils.CreateFixedSizeBuffers<double>(4, _n);
 #elif LEAPFROG
 		_accelBuffer = new double[_n];
 		_newAccelBuffer = new double[_n];
@@ -98,14 +94,34 @@ public class NPendulum : IDisposable
 			_vector[i] = sum;
 		});
 	}
-#if RUNGEKUTTA
-	private (double[], double[]) F(double[] thetas, double[] thetaDots)
+
+	private void Populate(double[] thetas, double[] thetaDots)
 	{
-		PopulateMatrix(thetas);
-		PopulateVector(thetas, thetaDots);
-		var solved = new double[_n];
-		_luSolver.Eliminate(_matrix, _vector, solved);
-		return (thetaDots, solved);
+		Parallel.For(0, _n, i =>
+		{
+			var sum = 0.0;
+			var theta = thetas[i];
+			for (int j = 0; j < _n; j++)
+			{
+				var theta2 = thetas[j];
+				var theta2dot = thetaDots[j];
+				var res = double.SinCos(theta - theta2);
+				var weird = _n - int.Max(i, j);
+				sum -= weird * res.Sin * theta2dot * theta2dot;
+				_matrix[i, j] = weird * res.Cos;
+			}
+			
+			sum -= Gravity * (_n - i) * double.Sin(theta);
+			_vector[i] = sum;
+		});
+	}
+	
+#if RUNGEKUTTA
+	private (double[], double[]) F(double[] thetas, double[] thetaDots, double[] solution)
+	{
+		Populate(thetas, thetaDots);
+		_luSolver.Eliminate(_matrix, _vector, solution);
+		return (thetaDots, solution);
 	}
 	
 	private double[] RkShorthand(double[] current, double[] baseValues, double mult, double[] output)
@@ -117,15 +133,15 @@ public class NPendulum : IDisposable
 		return output;
 	}
 	
-	private (double[], double[]) ApplyRk((double[], double[]) current, in double[] firstBase, in double[] secondBase, double mult, double[] secondBuffer)
-		=> F(RkShorthand(current.Item1, firstBase, mult, _rk1Buffer), RkShorthand(current.Item2, secondBase, mult, secondBuffer));
+	private (double[], double[]) ApplyRk((double[], double[]) current, double[] firstBase, double[] secondBase, double mult, double[] secondBuffer, double[] solutionBuffer)
+		=> F(RkShorthand(current.Item1, firstBase, mult, _rkBuffers[0]), RkShorthand(current.Item2, secondBase, mult, secondBuffer), solutionBuffer);
 
 	private void RungeKutta4(double dt, double[] thetas, double[] thetaDots)
 	{
-		var k1 = F(thetas, thetaDots);
-		var k2 = ApplyRk(k1, thetas, thetaDots, 0.5 * dt, _rk2Buffer);
-		var k3 = ApplyRk(k2, thetas, thetaDots, 0.5 * dt, _rk3Buffer);
-		var k4 = ApplyRk(k3, thetas, thetaDots, 1 * dt, _rk4Buffer);
+		var k1 = F(thetas, thetaDots, _rkSolutionBuffers[0]);
+		var k2 = ApplyRk(k1, thetas, thetaDots, 0.5 * dt, _rkBuffers[1], _rkSolutionBuffers[1]);
+		var k3 = ApplyRk(k2, thetas, thetaDots, 0.5 * dt, _rkBuffers[2], _rkSolutionBuffers[2]);
+		var k4 = ApplyRk(k3, thetas, thetaDots, 1 * dt, _rkBuffers[3], _rkSolutionBuffers[3]);
 		Parallel.For(0, _n, i =>
 		{
 			thetas[i] += dt / 6 * (k1.Item1[i] + (k2.Item1[i] + k3.Item1[i]) * 2 + k4.Item1[i]);
@@ -135,8 +151,7 @@ public class NPendulum : IDisposable
 #elif SYMEULER
 	private void SymplecticEuler(double dt, double[] thetas, double[] thetaDots)
 	{
-		PopulateMatrix(thetas);
-		PopulateVector(thetas, thetaDots);
+		Populate(thetas, thetaDots);
 
 		_luSolver.Eliminate(_matrix, _vector, _solutionBuffer);
 
@@ -149,8 +164,7 @@ public class NPendulum : IDisposable
 #elif LEAPFROG
 	private void Leapfrog(double dt, double[] thetas, double[] thetaDots)
 	{
-		PopulateMatrix(thetas);
-		PopulateVector(thetas, thetaDots);
+		Populate(thetas, thetaDots);
 		_luSolver.Eliminate(_matrix, _vector, _accelBuffer);
 		Parallel.For(0, _n, i =>
 		{
@@ -158,8 +172,7 @@ public class NPendulum : IDisposable
 			thetas[i] += dt * thetaDots[i];
 		});
 		
-		PopulateMatrix(thetas);
-		PopulateVector(thetas, thetaDots);
+		Populate(thetas, thetaDots);
 		
 		_luSolver.Eliminate(_matrix, _vector, _newAccelBuffer);
 
