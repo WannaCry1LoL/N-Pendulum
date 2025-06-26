@@ -1,4 +1,6 @@
-﻿namespace Pendulum.Math;
+﻿using Accessibility;
+
+namespace Pendulum.Math;
 
 public class NxNLUSolver
 {
@@ -16,9 +18,6 @@ public class NxNLUSolver
 	}
 	public void Decompose(double[,] source)
 	{
-		Array.Clear(_uBuffer);
-		Array.Clear(_lBuffer);
-		Array.Clear(_uTransformBuffer);
 		for (var i = 0; i < _n; i++)
 		{
 			for (var k = i; k < _n; k++)
@@ -56,15 +55,9 @@ public class NxNLUSolver
 	
 	public void Eliminate(double[,] matrix, ReadOnlySpan<double> coefficients, Span<double> solution)
 	{
-		if (matrix.GetLength(0) != matrix.GetLength(1))
-		{
-			throw new ArgumentException("Matrix of equation coefficients is not square shaped.");
-		}
-
-		var pivot = matrix.GetLength(0);
 		Decompose(matrix);
 
-		for (var i = 0; i < pivot; i++)
+		for (var i = 0; i < _n; i++)
 		{
 			double pivotPointSum = 0;
 
@@ -76,11 +69,11 @@ public class NxNLUSolver
 			_uTransformBuffer[i] = coefficients[i] - pivotPointSum;
 		}
 
-		for (var i = pivot - 1; i >= 0; i--)
+		for (var i = _n - 1; i >= 0; i--)
 		{
 			double pivotPointSum = 0;
 
-			for (var j = i + 1; j < pivot; j++)  // Start from i + 1, not i
+			for (var j = i + 1; j < _n; j++)
 			{
 				pivotPointSum += solution[j] * _uBuffer[i, j];
 			}
