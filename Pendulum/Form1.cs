@@ -45,6 +45,7 @@ public partial class Form1 : Form
 			using var bitGraphics = Graphics.FromImage(_bitmap);
 			var g = args.Graphics;
 			g.SmoothingMode = SmoothingMode.AntiAlias;
+			bitGraphics.SmoothingMode = SmoothingMode.AntiAlias;
 			pendulum.Draw(g, bitGraphics,
 				new PointF(_mainArea.ClientSize.Width / 2.0f, _mainArea.ClientSize.Height / 2.0f));
 		};
