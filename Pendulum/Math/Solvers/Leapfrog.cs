@@ -2,32 +2,32 @@
 
 public class Leapfrog : PendulumSolverBase
 {
-	protected readonly double[] _accelBuffer;
-	protected readonly double[] _newAccelBuffer;
+	protected readonly double[] AccelBuffer;
+	protected readonly double[] NewAccelBuffer;
 
 	public Leapfrog(int n, double g) : base(n, g)
 	{
-		_accelBuffer = new double[n];
-		_newAccelBuffer = new double[n];
+		AccelBuffer = new double[n];
+		NewAccelBuffer = new double[n];
 	}
 	
 	public override void Solve(double dt, double[] thetas, double[] thetaDots)
 	{
 		Populate(thetas, thetaDots);
-		LuSolver.Eliminate(Matrix, Vector, _accelBuffer);
+		LuSolver.Eliminate(Matrix, Vector, AccelBuffer);
 		Parallel.For(0, N, i =>
 		{
-			thetaDots[i] += 0.5 * dt * _accelBuffer[i];
+			thetaDots[i] += 0.5 * dt * AccelBuffer[i];
 			thetas[i] += dt * thetaDots[i];
 		});
 		
 		Populate(thetas, thetaDots);
 		
-		LuSolver.Eliminate(Matrix, Vector, _newAccelBuffer);
+		LuSolver.Eliminate(Matrix, Vector, NewAccelBuffer);
 
 		Parallel.For(0, N, i =>
 		{
-			thetaDots[i] += 0.5 * dt * _newAccelBuffer[i];
+			thetaDots[i] += 0.5 * dt * NewAccelBuffer[i];
 		});
 	}
 }
