@@ -1,6 +1,6 @@
 ﻿namespace Pendulum.Math;
 
-public abstract class PendulumSolverBase
+public abstract class PendulumSolverBase : IPendulumSolver
 {
 	protected readonly int N;
 	protected readonly double Gravity;

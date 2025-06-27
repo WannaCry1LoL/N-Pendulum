@@ -16,7 +16,7 @@ public class NPendulum : IDisposable
 	
 	private PointF? _previous;
 	
-	private readonly PendulumSolverBase _solver;
+	private readonly IPendulumSolver _solver;
 	
 	private readonly double[] _thetas;
 	private readonly double[] _thetaDots;
