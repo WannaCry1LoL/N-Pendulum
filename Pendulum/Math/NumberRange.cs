@@ -17,8 +17,8 @@ public readonly record struct NumberRange<T> where T : INumberBase<T>, IComparab
 	public NumberRange(T min, T max) => (Min, Max) = (min, max);
 	private static ComparisonTriState Compare(T left, T right) => (ComparisonTriState)left.CompareTo(right);
 	
-	public T ClampLower(T val) => Compare(val, Min) == ComparisonTriState.Smaller ? Min : val;
-	public T ClampUpper(T val) => Compare(val, Max) == ComparisonTriState.Greater ? Max : val;
+	public T ClampLower(T val) => Compare(val, Min) < ComparisonTriState.Equal ? Min : val;
+	public T ClampUpper(T val) => Compare(val, Max) > ComparisonTriState.Equal ? Max : val;
 	public T Clamp(T val) => ClampUpper(ClampLower(val));
 	
 	public T Map(T val, T firstMin, T firstMax) => (val - firstMin)/(firstMax - firstMin) * (Max - Min) + Min;
