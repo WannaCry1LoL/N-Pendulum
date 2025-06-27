@@ -40,6 +40,7 @@ public class NPendulum : IDisposable
 			SolverType.RungeKutta4 => new RungeKutta4(_n, Gravity),
 			SolverType.SymplecticEuler => new SymplecticEuler(_n, Gravity),
 			SolverType.Leapfrog => new Leapfrog(_n, Gravity),
+			_ => throw new InvalidOperationException("Unknown solver type"),
 		};
 		
 		_armlength = ArmLength / _n;
