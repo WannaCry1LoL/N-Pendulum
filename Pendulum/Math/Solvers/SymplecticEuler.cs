@@ -17,8 +17,8 @@ public class SymplecticEuler : PendulumSolverBase
 
 		Parallel.For(0, N, i =>
 		{
-			thetaDots[i] += dt * SolutionBuffer[i];
 			thetas[i] += dt * thetaDots[i];
+			thetaDots[i] += dt * SolutionBuffer[i];
 		});
 	}
 }
