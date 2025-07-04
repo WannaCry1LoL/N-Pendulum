@@ -1,4 +1,4 @@
-﻿namespace Pendulum.Math;
+﻿namespace Pendulum.Math.Solvers;
 
 public class Leapfrog : PendulumSolverBase
 {

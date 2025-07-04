@@ -1,4 +1,6 @@
-﻿namespace Pendulum.Math;
+﻿using Pendulum.Math.Solvers;
+
+namespace Pendulum.Math;
 
 public enum SolverType
 {

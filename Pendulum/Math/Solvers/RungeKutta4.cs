@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace Pendulum.Math;
+namespace Pendulum.Math.Solvers;
 
 public class RungeKutta4 : PendulumSolverBase
 {
