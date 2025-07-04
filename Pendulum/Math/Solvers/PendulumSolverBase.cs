@@ -21,9 +21,9 @@ public abstract class PendulumSolverBase : IPendulumSolver
 				var theta2 = thetas[j];
 				var theta2dot = thetaDots[j];
 				var res = double.SinCos(theta - theta2);
-				var weird = N - int.Max(i, j);
-				sum -= weird * res.Sin * theta2dot * theta2dot;
-				Matrix[i, j] = weird * res.Cos;
+				var massCoupling = N - int.Max(i, j);
+				sum -= massCoupling * res.Sin * theta2dot * theta2dot;
+				Matrix[i, j] = massCoupling * res.Cos;
 			}
 			
 			sum -= Gravity * (N - i) * double.Sin(theta);
