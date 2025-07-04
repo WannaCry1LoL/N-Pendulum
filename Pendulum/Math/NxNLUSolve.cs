@@ -1,6 +1,4 @@
-﻿using Accessibility;
-
-namespace Pendulum.Math;
+﻿namespace Pendulum.Math;
 
 public class NxNLUSolver
 {
