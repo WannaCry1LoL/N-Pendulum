@@ -71,12 +71,12 @@ public class NPendulumBuilder
 		return this;
 	}
 	
-	public NPendulum Build()
+	public NPendulum Build(SolverType solverType = SolverType.RungeKutta4)
 	{
 		if (_pendulums.Count == 0) 
 			throw new InvalidOperationException("No pendulums added to the builder.");
 		var thetas = _pendulums.Select(x => x.Theta).ToArray();
 		var thetaDots = _pendulums.Select(x => x.ThetaDot).ToArray();
-		return new NPendulum(thetas, thetaDots);
+		return new NPendulum(thetas, thetaDots, solverType);
 	}
 }
