@@ -11,7 +11,7 @@ public enum SolverType
 
 public class NPendulum : IDisposable
 {
-	private const double Gravity = 9.8;
+	private const double Gravity = 9.81;
 	private const double ArmLength = 500;
 	private const float CircleSize = 20;
 	private const float CircleOffset = (CircleSize / 2);
