@@ -15,19 +15,17 @@ public class Leapfrog : PendulumSolverBase
 	{
 		Populate(thetas, thetaDots);
 		LuSolver.Eliminate(Matrix, Vector, AccelBuffer);
-		Parallel.For(0, N, i =>
+		for (int i = 0; i < N; i++)
 		{
 			thetaDots[i] += 0.5 * dt * AccelBuffer[i];
 			thetas[i] += dt * thetaDots[i];
-		});
+		}
 		
 		Populate(thetas, thetaDots);
 		
 		LuSolver.Eliminate(Matrix, Vector, NewAccelBuffer);
 
-		Parallel.For(0, N, i =>
-		{
+		for (int i = 0; i < N; i++)
 			thetaDots[i] += 0.5 * dt * NewAccelBuffer[i];
-		});
 	}
 }

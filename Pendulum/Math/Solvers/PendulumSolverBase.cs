@@ -12,7 +12,7 @@ public abstract class PendulumSolverBase : IPendulumSolver
 	
 	protected void Populate(double[] thetas, double[] thetaDots)
 	{
-		Parallel.For(0, N, i =>
+		for (int i = 0; i < N; i++)
 		{
 			var sum = 0.0;
 			var theta = thetas[i];
@@ -28,7 +28,7 @@ public abstract class PendulumSolverBase : IPendulumSolver
 			
 			sum -= Gravity * (N - i) * double.Sin(theta);
 			Vector[i] = sum;
-		});
+		}
 	}
 	
 	protected PendulumSolverBase(int n, double g)

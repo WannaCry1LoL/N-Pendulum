@@ -14,11 +14,10 @@ public class SymplecticEuler : PendulumSolverBase
 		Populate(thetas, thetaDots);
 
 		LuSolver.Eliminate(Matrix, Vector, SolutionBuffer);
-
-		Parallel.For(0, N, i =>
+		for (int i = 0; i < N; i++)
 		{
-			thetas[i] += dt * thetaDots[i];
 			thetaDots[i] += dt * SolutionBuffer[i];
-		});
+			thetas[i] += dt * thetaDots[i];
+		}
 	}
 }

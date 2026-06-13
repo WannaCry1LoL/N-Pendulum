@@ -30,7 +30,7 @@ public class NPendulumBuilder
 
 	public NPendulumBuilder AddRandom(NumberRange<double>? thetaRange = null, NumberRange<double>? thetaDotRange = null)
 	{
-		var thetaBounds = thetaRange ??  new NumberRange<double>(0.0, double.Tau);
+		var thetaBounds = thetaRange ?? new NumberRange<double>(0.0, double.Tau);
 		var thetaDotBounds = thetaDotRange ?? new NumberRange<double>(0.0, 0.0);
 		var theta = thetaBounds.Map(Random.Shared.NextDouble(), 0, 1);
 		var thetaDot = thetaDotBounds.Map(Random.Shared.NextDouble(), 0, 1);
@@ -79,4 +79,8 @@ public class NPendulumBuilder
 		var thetaDots = _pendulums.Select(x => x.ThetaDot).ToArray();
 		return new NPendulum(thetas, thetaDots, solverType);
 	}
+
+	public static NPendulum Heart => new NPendulumBuilder().Add(2.453, 0).Add(-2.7727, 0).Build();
+	public static NPendulum Shoelace => new NPendulumBuilder().Add(2.658, 0).Add(-2.19, 0).Build();
+	public static NPendulum Pretzel => new NPendulumBuilder().Add(2.49, 0).Add(0.25, 0).Build();
 }

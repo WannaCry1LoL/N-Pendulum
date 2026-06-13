@@ -11,7 +11,7 @@ public enum SolverType
 
 public class NPendulum : IDisposable
 {
-	private const double Gravity = -9.81;
+	private const double Gravity = 9.8;
 	private const double ArmLength = 500;
 	private const float CircleSize = 20;
 	private const float CircleOffset = (CircleSize / 2);
@@ -67,7 +67,7 @@ public class NPendulum : IDisposable
 		{
 			var res = double.SinCos(_thetas[i]);
 			x += res.Sin * _armlength;
-			y -= res.Cos * _armlength;
+			y += res.Cos * _armlength;
 			_positions[i + 1] = new PointF((float)x, (float)y);
 		}
 	}

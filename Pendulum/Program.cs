@@ -6,7 +6,7 @@ static class Program
 	///  The main entry point for the application.
 	/// </summary>
 	[STAThread]
-	static void Main(string[] args)
+	private static void Main(string[] args)
 	{
 		var amount = 2;
 		if (args.Length >= 1)

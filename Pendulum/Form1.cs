@@ -8,18 +8,12 @@ public partial class Form1 : Form
 	private readonly Panel _mainArea = new DoubleBufferedPanel();
 	private Bitmap _bitmap;
 	private long _lastUpdate;
-	private readonly Timer _timer = new()
-	{
-		Interval = 1
-	};
-	private readonly Stopwatch _stopwatch = new();
 	
+	private readonly Stopwatch _stopwatch = new();
+	private readonly CancellationTokenSource _cts = new();
 	public Form1(int amount)
 	{
-		var pendulum = NPendulumBuilder
-			.Create()
-			.AddNRandom(amount, NumberRange<double>.FromVariation(0, 0.5 * double.Pi))
-			.Build();
+		var pendulum = NPendulumBuilder.Heart;
 		
 		InitializeComponent();
 		
@@ -33,13 +27,14 @@ public partial class Form1 : Form
 			_mainArea.BackgroundImage = _bitmap;
 			pendulum.ClearPoints();
 		};
-		
+
 		FormClosing += (sender, args) =>
 		{
-			_timer.Stop();
+			_cts.Cancel();
+			_stopwatch.Stop();
 			pendulum.Dispose();
 		};
-
+		
 		_mainArea.Paint += (sender, args) =>
 		{
 			using var bitGraphics = Graphics.FromImage(_bitmap);
@@ -49,20 +44,23 @@ public partial class Form1 : Form
 			pendulum.Draw(g, bitGraphics,
 				new PointF(_mainArea.ClientSize.Width / 2.0f, _mainArea.ClientSize.Height / 2.0f));
 		};
-		
-		_timer.Tick += (sender, args) =>
+
+		Task.Run(() =>
 		{
-			var dt = _stopwatch.ElapsedMilliseconds - _lastUpdate;
-			pendulum.Update(dt / 2500.0);
-			_lastUpdate = _stopwatch.ElapsedMilliseconds;
-			_mainArea.Invalidate();
-		};
+			var task = _cts.Token;
+			while (!task.IsCancellationRequested)
+			{
+				pendulum.Update(0.001);
+				if (_mainArea.IsHandleCreated)
+					_mainArea.BeginInvoke(() => _mainArea.Invalidate());
+				Thread.Sleep(10);
+			}
+		});
 		
 		_mainArea.Size = ClientSize;
 		_bitmap = new Bitmap(_mainArea.ClientSize.Width, _mainArea.ClientSize.Height);
 		_mainArea.BackgroundImage = _bitmap;
 		_lastUpdate = 0;
-		_timer.Start();
 		_stopwatch.Start();
 		Controls.Add(_mainArea);
 		

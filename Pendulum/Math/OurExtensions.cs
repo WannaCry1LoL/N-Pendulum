@@ -1,6 +1,7 @@
-﻿namespace Pendulum.Math;
+﻿using System.Numerics;
+
+namespace Pendulum.Math;
 public static class OurExtensions
 {
-	public static double Mod(this double value, double right) => value - right * double.Floor(value / right);
-	
+	public static T Mod<T>(this T value, T right) where T : IFloatingPoint<T> => value - right * T.Floor(value / right);
 }
